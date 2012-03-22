@@ -64,7 +64,7 @@ public class TailFileReader {
   }
 
   public void indexedFile() throws IOException {
-    File f = File.createTempFile("writeToFile", ".text");
+    File f = File.createTempFile("indexedFile", ".text");
     f.deleteOnExit();
 
     // write file
@@ -80,7 +80,7 @@ public class TailFileReader {
       String hash = hasher.hashString(text.toString()).toString();
       index.add(hash, output.size());
       text.writeData(output);
-      if(i == 10) {
+      if(i == 10) { // pick a random index to query
         key = hash;
         value = text;
       }

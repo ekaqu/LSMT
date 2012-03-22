@@ -31,19 +31,16 @@ public class DataIndex implements Writable {
 
   public void readData(final DataInput input) throws IOException {
     this.pairs.clear();
-    while( true ) {
+    int size = input.readInt();
+    for( int i = 0; i < size; i++ ) {
       IndexPair pair = new IndexPair();
-      try {
-        pair.readData(input);
-        this.pairs.put(pair.key, pair);
-      } catch (IOException e) {
-        // no data left so break out
-        break;
-      }
+      pair.readData(input);
+      this.pairs.put(pair.key, pair);
     }
   }
 
   public void writeData(final DataOutput output) throws IOException {
+    output.writeInt(this.pairs.size());
     for(IndexPair pair : pairs.values()) {
       pair.writeData(output);
     }
