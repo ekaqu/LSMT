@@ -19,7 +19,7 @@ import java.util.Comparator;
 import java.util.Iterator;
 
 /**
- *
+ *  This file is a fork of the HBase Bytes class.
  */
 public class Bytes {
 
