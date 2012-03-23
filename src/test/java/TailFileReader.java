@@ -1,9 +1,10 @@
 import com.ekaqu.lsmt.data.DataIndex;
 import com.ekaqu.lsmt.data.Text;
 import com.ekaqu.lsmt.util.Bytes;
+import com.ekaqu.lsmt.util.ObjectSerializer;
 import com.google.common.base.Stopwatch;
-import com.google.common.hash.HashFunction;
-import com.google.common.hash.Hashing;
+import com.google.common.hash.*;
+import com.google.common.io.CountingOutputStream;
 import org.testng.annotations.Test;
 
 import java.io.*;
@@ -11,6 +12,7 @@ import java.util.concurrent.TimeUnit;
 
 import static java.lang.System.out;
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertTrue;
 
 /**
  *
@@ -109,5 +111,51 @@ public class TailFileReader {
     out.printf("Read %s from file\n", readValue);
     input.close();
     assertEquals(readValue.toString(), value.toString(), "Unable to read the data from the file");
+  }
+
+  public void bloom() throws IOException, ClassNotFoundException {
+    BloomFilter<byte[]> bloom = BloomFilter.create(Funnels.byteArrayFunnel(), 10);
+
+    File f = File.createTempFile("bloomfile", ".text");
+    f.deleteOnExit();
+
+    // write file
+    out.printf("Writing to file %s\n", f);
+    DataOutputStream output = new DataOutputStream(new FileOutputStream(f));
+    Text value = null;
+    for(int i = 0; i < 20; i++) {
+      Text text = new Text(String.valueOf(System.currentTimeMillis()));
+      bloom.put(text.toString().getBytes());
+      text.writeData(output);
+      if(i == 10) { // pick a random index to query
+        value = text;
+      }
+    }
+    output.flush(); // counter doesn't have the rigtht number unless i do this
+    int indexPosition = output.size();
+    byte[] obj = ObjectSerializer.serialize(bloom);
+    output.writeInt(obj.length);
+    output.write(obj);
+    output.writeInt(indexPosition); // where the bloom starts
+    output.close();
+
+    // read file
+    DataInputStream input = new DataInputStream(new BufferedInputStream(new FileInputStream(f)));
+    input.mark(1024);
+    // Read in index
+    out.printf("File length is %d and size of a long is %d\n", f.length(), Bytes.SIZEOF_INT);
+    input.skip(f.length() - Bytes.SIZEOF_INT);
+    long position = input.readInt();
+    assertEquals(position, indexPosition, "Location of the index does not match");
+    input.reset();
+    input.skip(position);
+    byte[] readObj = new byte[input.readInt()];
+    input.read(readObj);
+    BloomFilter<byte[]> readBloom = (BloomFilter<byte[]>) ObjectSerializer.deserialize(readObj);
+
+    boolean contains = bloom.mightContain(value.toString().getBytes());
+    out.printf("Checking if bloom contains %s : %s\n", value, contains);
+    input.close();
+    assertTrue(contains, "Text is not in the bloom");
   }
 }
