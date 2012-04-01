@@ -22,7 +22,6 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
 
 import static com.ekaqu.lsmt.data.protobuf.generated.LSMTProtos.KeyValue;
 import static com.ekaqu.lsmt.ipc.protobuf.generated.ServiceProtos.DataService;
@@ -131,6 +130,5 @@ public class ProtoRPCServerExample {
     synchronized (lock) {
       lock.wait();
     }
-
   }
 }
