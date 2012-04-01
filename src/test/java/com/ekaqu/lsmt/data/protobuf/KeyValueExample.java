@@ -2,9 +2,9 @@ package com.ekaqu.lsmt.data.protobuf;
 
 import com.ekaqu.lsmt.data.protobuf.generated.LSMTProtos;
 import com.google.protobuf.ByteString;
-import com.google.protobuf.InvalidProtocolBufferException;
 import org.testng.annotations.Test;
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
@@ -42,5 +42,46 @@ public class KeyValueExample {
     output.close();
     byte[] outputData = output.toByteArray();
     assertEquals(outputData, data, "byte data is different");
+  }
+
+  @Test
+  public void readMultiWrite() throws IOException {
+    ByteArrayOutputStream output = new ByteArrayOutputStream();
+    
+    for(int i = 0; i < 10; i++) {
+      KeyValue kv = KeyValue.newBuilder()
+        .setRow(ByteString.copyFromUtf8("row1"))
+        .setQualifier(ByteString.copyFromUtf8("qualifer"))
+        .setTimestamp(System.currentTimeMillis())
+        .setValue(ByteString.copyFromUtf8("value"))
+        .build();
+      kv.writeTo(output);
+    }
+
+    byte[] data = output.toByteArray();
+    ByteArrayInputStream input = new ByteArrayInputStream(data);
+
+    for(int i = 0; i < 10; i++) {
+      KeyValue kv = KeyValue.parseFrom(input);
+    }
+  }
+  
+  @Test
+  public void dataFormat() throws IOException {
+    LSMTProtos.DataFormat.Builder builder = LSMTProtos.DataFormat.newBuilder();
+    for(int i = 0; i < 10; i++) {
+      builder.addData(KeyValue.newBuilder()
+        .setRow(ByteString.copyFromUtf8("row" + i))
+        .setQualifier(ByteString.copyFromUtf8("qualifer" + i))
+        .setTimestamp(System.currentTimeMillis())
+        .setValue(ByteString.copyFromUtf8("value" + i)));
+    }
+
+    ByteArrayOutputStream output = new ByteArrayOutputStream();
+    builder.build().writeTo(output);
+
+    ByteArrayInputStream input = new ByteArrayInputStream(output.toByteArray());
+    LSMTProtos.DataFormat data = LSMTProtos.DataFormat.parseFrom(input);
+    System.out.println(data);
   }
 }

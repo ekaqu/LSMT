@@ -10,3 +10,8 @@ message KeyValue {
   optional uint64 timestamp = 3;
   optional bytes value = 4;
 }
+
+message DataFormat {
+  repeated KeyValue data = 1;
+  optional bytes bloom = 2;
+}
