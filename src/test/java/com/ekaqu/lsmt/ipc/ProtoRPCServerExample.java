@@ -71,13 +71,6 @@ public class ProtoRPCServerExample {
 
     System.out.println("Starting server on " + socketAddress);
     bootstrap.bind();
-
-
-//    try {
-//      TimeUnit.SECONDS.sleep(20);
-//    } catch (InterruptedException e) {
-//      e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
-//    }
   }
 
   @Test(dependsOnGroups = "example.ipc.server")
