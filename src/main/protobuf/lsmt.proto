@@ -1,6 +1,7 @@
 option java_package = "com.ekaqu.lsmt.data.protobuf.generated";
 option java_outer_classname = "LSMTProtos";
 option java_generate_equals_and_hash = true;
+option java_generic_services = true;
 
 option optimize_for = SPEED;
 
@@ -13,5 +14,4 @@ message KeyValue {
 
 message DataFormat {
   repeated KeyValue data = 1;
-  optional bytes bloom = 2;
 }

@@ -3,9 +3,12 @@ package com.ekaqu.lsmt.io;
 import com.ekaqu.lsmt.data.BloomFilter;
 import com.ekaqu.lsmt.data.Writables;
 import com.ekaqu.lsmt.data.protobuf.generated.LSMTProtos;
+import com.ekaqu.lsmt.util.Bytes;
 import com.google.common.base.Throwables;
 import com.google.common.io.CountingOutputStream;
+import com.google.common.io.LimitInputStream;
 import com.google.protobuf.ByteString;
+import com.google.protobuf.CodedInputStream;
 
 import java.io.*;
 import java.util.Iterator;
@@ -19,7 +22,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 public class KeyValueFile {
 
   public static class Writer implements Appendable<LSMTProtos.KeyValue>, Closeable {
-    private final OutputStream out;
+    private final CountingOutputStream out;
     private final DataFormat.Builder data;
     private final BloomFilter bloom;
 
@@ -36,8 +39,11 @@ public class KeyValueFile {
     }
 
     public void close() throws IOException {
-      this.data.setBloom(ByteString.copyFrom(Writables.toBytes(this.bloom)));
       this.data.build().writeTo(out);
+      long bloomIndex = this.out.getCount();
+      DataOutputStream data = new DataOutputStream(this.out);
+      bloom.writeData(data);
+      data.writeLong(bloomIndex);
       this.out.close();
     }
   }
@@ -45,29 +51,37 @@ public class KeyValueFile {
   public static class Reader implements Iterable<LSMTProtos.KeyValue> {
     private BloomFilter bloom;
     private DataFormat data;
+    private CodedInputStream protoInput;
 
     public Reader(final InputStream input, final long inputLenght) throws IOException {
-      this.data = DataFormat.parseFrom(input);
+      DataInputStream data = new DataInputStream(new BufferedInputStream(input));
+      data.mark(1024);
+      
+      // read bloom
+      data.skip(inputLenght - Bytes.SIZEOF_LONG);
+      long bloomIndex = data.readLong();
+      data.reset(); data.skip(bloomIndex);
+      BloomFilter bf = new BloomFilter();
+      bf.readData(data);
+      this.bloom = bf;
+      
+      // create proto's input stream
+      data.reset();
+      protoInput = CodedInputStream.newInstance(new LimitInputStream(data, bloomIndex));
     }
 
     public boolean mightContain(byte[] key) {
-      if(this.bloom == null) {
+      return this.bloom.mightContain(key);
+    }
+
+    public Iterator<LSMTProtos.KeyValue> iterator() {
+      if(this.data == null) {
         try {
-          loadBloomFilter();
+          this.data = DataFormat.parseFrom(protoInput);
         } catch (IOException e) {
           Throwables.propagate(e);
         }
       }
-
-      return this.bloom.mightContain(key);
-    }
-
-    private synchronized void loadBloomFilter() throws IOException {
-      this.bloom = new BloomFilter();
-      Writables.fromBytes(bloom, this.data.getBloom().toByteArray());
-    }
-
-    public Iterator<LSMTProtos.KeyValue> iterator() {
       return this.data.getDataList().iterator();
     }
   }

@@ -21,6 +21,17 @@
       <version>2.4.1</version>
       <scope>compile</scope>
     </dependency>
+
+    <dependency>
+      <groupId>com.googlecode.protobuf-rpc-pro</groupId>
+      <artifactId>protobuf-rpc-pro-duplex</artifactId>
+      <version>1.1.1</version>
+    </dependency>
+    <!--<dependency>-->
+      <!--<groupId>com.googlecode.protobuf-rpc-pro</groupId>-->
+      <!--<artifactId>protobuf-streamer-pro</artifactId>-->
+      <!--<version>1.1.1</version>-->
+    <!--</dependency>-->
             
 
     <!-- Test Dependencies -->
@@ -44,8 +55,10 @@
              <tasks>
                <mkdir dir="target/generated-sources/java"/>
                <exec executable="protoc">
+                 <arg value="--proto_path=src/main/protobuf"/>
                  <arg value="--java_out=target/generated-sources/java"/>
                  <arg value="src/main/protobuf/lsmt.proto"/>
+                 <arg value="src/main/protobuf/service.proto"/>
                </exec>
              </tasks>
              <sourceRoot>target/generated-sources</sourceRoot>

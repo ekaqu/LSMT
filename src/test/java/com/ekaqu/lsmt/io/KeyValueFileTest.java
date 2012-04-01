@@ -64,7 +64,10 @@ public class KeyValueFileTest {
     assertEquals(count, 20, "Should have 20 elements");
   }
 
-  @Test(dependsOnGroups = "file.writer")
+  @Test(dependsOnGroups = "file.writer",
+      enabled = false,
+      description = "Disabled because ProtoBuff needs to read only an " +
+          "InputStream containing its own data.  The KeyValueFile masks this")
   public void readStream() throws IOException {
     byte[] data = this.outputStream.toByteArray();
     ByteArrayInputStream inputStream = new ByteArrayInputStream(data);
@@ -72,7 +75,10 @@ public class KeyValueFileTest {
     LSMTProtos.KeyValue kv = LSMTProtos.KeyValue.parseFrom(inputStream);
   }
 
-  @Test(dependsOnGroups = "file.writer")
+  @Test(dependsOnGroups = "file.writer",
+      enabled = false,
+      description = "Disabled because ProtoBuff needs to read only an " +
+          "InputStream containing its own data.  The KeyValueFile masks this")
   public void readDataFormat() throws IOException {
     byte[] bytes = this.outputStream.toByteArray();
     ByteArrayInputStream inputStream = new ByteArrayInputStream(bytes);

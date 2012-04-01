@@ -1,0 +1,19 @@
+import "lsmt.proto";
+
+option java_package = "com.ekaqu.lsmt.ipc.protobuf.generated";
+option java_outer_classname = "ServiceProtos";
+option java_generate_equals_and_hash = true;
+option java_generic_services = true;
+
+option optimize_for = SPEED;
+
+message GetRequest {
+  optional bytes row = 1;
+}
+
+message GetResponse {
+  repeated KeyValue data = 1;
+}
+service DataService {
+  rpc GetData(GetRequest) returns(GetResponse);
+}

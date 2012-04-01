@@ -2,12 +2,14 @@ package com.ekaqu.lsmt.data.protobuf;
 
 import com.ekaqu.lsmt.data.protobuf.generated.LSMTProtos;
 import com.google.protobuf.ByteString;
+import com.google.protobuf.WireFormat;
 import org.testng.annotations.Test;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
+import static com.ekaqu.lsmt.data.protobuf.generated.LSMTProtos.DataFormat;
 import static com.ekaqu.lsmt.data.protobuf.generated.LSMTProtos.KeyValue;
 import static org.testng.Assert.assertEquals;
 
@@ -68,7 +70,7 @@ public class KeyValueExample {
   
   @Test
   public void dataFormat() throws IOException {
-    LSMTProtos.DataFormat.Builder builder = LSMTProtos.DataFormat.newBuilder();
+    DataFormat.Builder builder = DataFormat.newBuilder();
     for(int i = 0; i < 10; i++) {
       builder.addData(KeyValue.newBuilder()
         .setRow(ByteString.copyFromUtf8("row" + i))
@@ -81,7 +83,33 @@ public class KeyValueExample {
     builder.build().writeTo(output);
 
     ByteArrayInputStream input = new ByteArrayInputStream(output.toByteArray());
-    LSMTProtos.DataFormat data = LSMTProtos.DataFormat.parseFrom(input);
+    DataFormat data = DataFormat.parseFrom(input);
     System.out.println(data);
+  }
+
+  @Test
+  public void protoAndNotProto() throws IOException {
+    ByteArrayOutputStream output = new ByteArrayOutputStream();
+
+    DataFormat.Builder builder = DataFormat.newBuilder();
+    for(int i = 0; i < 10; i++) {
+      builder.addData(
+          KeyValue.newBuilder()
+              .setRow(ByteString.copyFromUtf8("row1"))
+              .setQualifier(ByteString.copyFromUtf8("qualifer"))
+              .setTimestamp(System.currentTimeMillis())
+              .setValue(ByteString.copyFromUtf8("value"))
+      );
+    }
+    builder.build().writeTo(output);
+    output.write("Test".getBytes());
+
+    byte[] data = output.toByteArray();
+    ByteArrayInputStream input = new ByteArrayInputStream(data);
+
+//    for(int i = 0; i < 10; i++) {
+//      KeyValue kv = KeyValue.parseFrom(input);
+//    }
+    DataFormat.parseFrom(input);
   }
 }
