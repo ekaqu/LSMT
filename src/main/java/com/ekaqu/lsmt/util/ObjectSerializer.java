@@ -1,9 +1,16 @@
 package com.ekaqu.lsmt.util;
 
-import java.io.*;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.Serializable;
 
 /**
+ * Serialize and Deserialize Objects.
  *
+ * All Objects must be of type Serializable.
  */
 public class ObjectSerializer {
 

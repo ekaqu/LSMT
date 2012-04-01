@@ -1,5 +1,6 @@
-package com.ekaqu.lsmt.data;
+package com.ekaqu.lsmt.testcase.data;
 
+import com.ekaqu.lsmt.data.DataIndex;
 import org.testng.annotations.Test;
 
 import java.io.ByteArrayInputStream;

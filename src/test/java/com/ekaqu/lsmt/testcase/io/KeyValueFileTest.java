@@ -1,6 +1,7 @@
-package com.ekaqu.lsmt.io;
+package com.ekaqu.lsmt.testcase.io;
 
 import com.ekaqu.lsmt.data.protobuf.generated.LSMTProtos;
+import com.ekaqu.lsmt.io.KeyValueFile;
 import com.google.common.io.Closeables;
 import com.google.protobuf.ByteString;
 import org.testng.annotations.BeforeClass;
