@@ -1,0 +1,12 @@
+option java_package = "com.ekaqu.lsmt.data.protobuf.generated";
+option java_outer_classname = "LSMTProtos";
+option java_generate_equals_and_hash = true;
+
+option optimize_for = SPEED;
+
+message KeyValue {
+  optional bytes row = 1;
+  optional bytes qualifier = 2;
+  optional uint64 timestamp = 3;
+  optional bytes value = 4;
+}

@@ -1,15 +1,18 @@
 import com.ekaqu.lsmt.data.DataIndex;
 import com.ekaqu.lsmt.data.Text;
+import com.ekaqu.lsmt.data.protobuf.generated.LSMTProtos;
 import com.ekaqu.lsmt.util.Bytes;
 import com.ekaqu.lsmt.util.ObjectSerializer;
 import com.google.common.base.Stopwatch;
 import com.google.common.hash.*;
 import com.google.common.io.CountingOutputStream;
+import com.google.protobuf.ByteString;
 import org.testng.annotations.Test;
 
 import java.io.*;
 import java.util.concurrent.TimeUnit;
 
+import static com.ekaqu.lsmt.data.protobuf.generated.LSMTProtos.KeyValue;
 import static java.lang.System.out;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertTrue;
@@ -153,7 +156,58 @@ public class TailFileReader {
     input.read(readObj);
     BloomFilter<byte[]> readBloom = (BloomFilter<byte[]>) ObjectSerializer.deserialize(readObj);
 
-    boolean contains = bloom.mightContain(value.toString().getBytes());
+    boolean contains = readBloom.mightContain(value.toString().getBytes());
+    out.printf("Checking if bloom contains %s : %s\n", value, contains);
+    input.close();
+    assertTrue(contains, "Text is not in the bloom");
+  }
+
+  public void bloomWithProto() throws IOException, ClassNotFoundException {
+    BloomFilter<byte[]> bloom = BloomFilter.create(Funnels.byteArrayFunnel(), 10);
+
+    File f = File.createTempFile("bloomfile", ".text");
+    f.deleteOnExit();
+
+    // write file
+    out.printf("Writing to file %s\n", f);
+    DataOutputStream output = new DataOutputStream(new FileOutputStream(f));
+    KeyValue value = null;
+    for(int i = 0; i < 20; i++) {
+      KeyValue kv = KeyValue.newBuilder()
+        .setRow(ByteString.copyFromUtf8("row" + i))
+        .setQualifier(ByteString.copyFromUtf8("qualifier" + i))
+        .setTimestamp(System.currentTimeMillis())
+        .setValue(ByteString.copyFromUtf8("value" + i))
+        .build();
+      bloom.put(kv.getRow().toByteArray());
+      kv.writeTo(output);
+      if(i == 10) { // pick a random index to query
+        value = kv;
+      }
+    }
+    output.flush(); // counter doesn't have the rigtht number unless i do this
+    int indexPosition = output.size();
+    byte[] obj = ObjectSerializer.serialize(bloom);
+    output.writeInt(obj.length);
+    output.write(obj);
+    output.writeInt(indexPosition); // where the bloom starts
+    output.close();
+
+    // read file
+    DataInputStream input = new DataInputStream(new BufferedInputStream(new FileInputStream(f)));
+    input.mark(1024);
+    // Read in index
+    out.printf("File length is %d and size of a long is %d\n", f.length(), Bytes.SIZEOF_INT);
+    input.skip(f.length() - Bytes.SIZEOF_INT);
+    long position = input.readInt();
+    assertEquals(position, indexPosition, "Location of the index does not match");
+    input.reset();
+    input.skip(position);
+    byte[] readObj = new byte[input.readInt()];
+    input.read(readObj);
+    BloomFilter<byte[]> readBloom = (BloomFilter<byte[]>) ObjectSerializer.deserialize(readObj);
+
+    boolean contains = readBloom.mightContain(value.getRow().toByteArray());
     out.printf("Checking if bloom contains %s : %s\n", value, contains);
     input.close();
     assertTrue(contains, "Text is not in the bloom");
