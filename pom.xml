@@ -46,6 +46,16 @@
   <build>
    <plugins>
      <plugin>
+       <groupId>org.codehaus.mojo</groupId>
+       <artifactId>findbugs-maven-plugin</artifactId>
+       <configuration>
+         <findbugsXmlOutput>true</findbugsXmlOutput>
+         <xmlOutput>true</xmlOutput>
+         <excludeFilterFile>${basedir}/target/generated-sources</excludeFilterFile>
+         <effort>Max</effort>
+       </configuration>
+     </plugin>
+     <plugin>
        <artifactId>maven-antrun-plugin</artifactId>
        <executions>
          <execution>

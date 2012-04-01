@@ -1,5 +1,4 @@
 import com.ekaqu.lsmt.data.*;
-import com.ekaqu.lsmt.data.protobuf.generated.LSMTProtos;
 import com.ekaqu.lsmt.util.Bytes;
 import com.ekaqu.lsmt.util.ObjectSerializer;
 import com.google.common.base.Stopwatch;
@@ -15,7 +14,6 @@ import java.io.*;
 import java.util.concurrent.TimeUnit;
 
 import static com.ekaqu.lsmt.data.protobuf.generated.LSMTProtos.KeyValue;
-import static java.lang.System.in;
 import static java.lang.System.out;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertTrue;
@@ -23,7 +21,7 @@ import static org.testng.Assert.assertTrue;
 /**
  *
  */
-@Test(groups = "random")
+@Test
 public class TailFileReader {
   
   public void tailFileReader() throws IOException {
@@ -43,10 +41,7 @@ public class TailFileReader {
     input = new BufferedReader(new FileReader(f));
     String lastLine = null;
     while( (line = input.readLine()) != null ) {
-//      out.printf("Current Line ==%s==\n", line);
-      if (line != null) {
         lastLine = line;
-      }
     }
     stopwatch.stop();
     out.printf("Read line ==%s== in %s nanoseconds\n", lastLine, stopwatch.elapsedTime(TimeUnit.NANOSECONDS));

@@ -1,19 +1,19 @@
 package com.ekaqu.lsmt.io;
 
 import com.ekaqu.lsmt.data.BloomFilter;
-import com.ekaqu.lsmt.data.Writables;
-import com.ekaqu.lsmt.data.protobuf.generated.LSMTProtos;
 import com.ekaqu.lsmt.util.Bytes;
 import com.google.common.base.Throwables;
+import com.google.common.collect.Lists;
+import com.google.common.io.ByteStreams;
 import com.google.common.io.CountingOutputStream;
 import com.google.common.io.LimitInputStream;
-import com.google.protobuf.ByteString;
 import com.google.protobuf.CodedInputStream;
 
 import java.io.*;
 import java.util.Iterator;
 
 import static com.ekaqu.lsmt.data.protobuf.generated.LSMTProtos.DataFormat;
+import static com.ekaqu.lsmt.data.protobuf.generated.LSMTProtos.KeyValue;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
@@ -21,7 +21,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
  */
 public class KeyValueFile {
 
-  public static class Writer implements Appendable<LSMTProtos.KeyValue>, Closeable {
+  public static class Writer implements Appendable<KeyValue>, Closeable {
     private final CountingOutputStream out;
     private final DataFormat.Builder data;
     private final BloomFilter bloom;
@@ -32,14 +32,18 @@ public class KeyValueFile {
       this.data = DataFormat.newBuilder();
     }
 
-    public Appendable<LSMTProtos.KeyValue> append(final LSMTProtos.KeyValue data) throws IOException {
+    public Appendable<KeyValue> append(final KeyValue data) throws IOException {
       this.bloom.put(data.getRow().toByteArray());
       this.data.addData(data);
+//      data.writeTo(this.out);
       return this;
     }
 
     public void close() throws IOException {
+      // write KeyValue data
       this.data.build().writeTo(out);
+
+      // write bloom
       long bloomIndex = this.out.getCount();
       DataOutputStream data = new DataOutputStream(this.out);
       bloom.writeData(data);
@@ -48,7 +52,7 @@ public class KeyValueFile {
     }
   }
 
-  public static class Reader implements Iterable<LSMTProtos.KeyValue> {
+  public static class Reader implements Iterable<KeyValue> {
     private BloomFilter bloom;
     private DataFormat data;
     private CodedInputStream protoInput;
@@ -58,23 +62,27 @@ public class KeyValueFile {
       data.mark(1024);
       
       // read bloom
-      data.skip(inputLenght - Bytes.SIZEOF_LONG);
+//      data.skip(inputLenght - Bytes.SIZEOF_LONG);
+      ByteStreams.skipFully(data, inputLenght - Bytes.SIZEOF_LONG);
       long bloomIndex = data.readLong();
-      data.reset(); data.skip(bloomIndex);
+      data.reset();
+//      data.skip(bloomIndex);
+      ByteStreams.skipFully(data, bloomIndex);
       BloomFilter bf = new BloomFilter();
       bf.readData(data);
       this.bloom = bf;
       
       // create proto's input stream
       data.reset();
-      protoInput = CodedInputStream.newInstance(new LimitInputStream(data, bloomIndex));
+      protoInput = CodedInputStream.newInstance(
+          new LimitInputStream(data, bloomIndex));
     }
 
     public boolean mightContain(byte[] key) {
       return this.bloom.mightContain(key);
     }
 
-    public Iterator<LSMTProtos.KeyValue> iterator() {
+    public Iterator<KeyValue> iterator() {
       if(this.data == null) {
         try {
           this.data = DataFormat.parseFrom(protoInput);
