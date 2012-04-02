@@ -32,7 +32,15 @@
       <!--<artifactId>protobuf-streamer-pro</artifactId>-->
       <!--<version>1.1.1</version>-->
     <!--</dependency>-->
-            
+
+    <dependency>
+      <groupId>com.stumbleupon</groupId>
+      <artifactId>async</artifactId>
+      <version>1.1.0</version>
+      <scope>test</scope>
+    </dependency>
+
+
 
     <!-- Test Dependencies -->
     <dependency>

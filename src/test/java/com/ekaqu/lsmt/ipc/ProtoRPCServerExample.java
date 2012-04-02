@@ -1,6 +1,5 @@
 package com.ekaqu.lsmt.ipc;
 
-import com.ekaqu.lsmt.ipc.protobuf.generated.ServiceProtos;
 import com.google.common.base.Stopwatch;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.RpcCallback;
@@ -12,6 +11,8 @@ import com.googlecode.protobuf.pro.duplex.client.DuplexTcpClientBootstrap;
 import com.googlecode.protobuf.pro.duplex.execute.RpcServerCallExecutor;
 import com.googlecode.protobuf.pro.duplex.execute.ThreadPoolCallExecutor;
 import com.googlecode.protobuf.pro.duplex.server.DuplexTcpServerBootstrap;
+import com.stumbleupon.async.Callback;
+import com.stumbleupon.async.Deferred;
 import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
 import org.jboss.netty.channel.socket.nio.NioServerSocketChannelFactory;
 import org.testng.annotations.BeforeClass;
@@ -130,5 +131,30 @@ public class ProtoRPCServerExample {
     synchronized (lock) {
       lock.wait();
     }
+  }
+
+  @Test(dependsOnGroups = "example.ipc.server")
+  public void clientRPC() throws Exception {
+    RPC.ClientRPC client = RPC.getClientRPC(socketAddress);
+    GetRequest request = GetRequest.newBuilder()
+        .setRow(ByteString.copyFromUtf8("row1"))
+        .build();
+
+    Deferred<GetResponse> response = client.getData(request);
+    GetResponse data = response.join();
+    System.out.println(data);
+
+    Deferred<GetResponse> deferred = client.getData(request);
+    deferred.addCallback(new Callback<Object, GetResponse>() {
+      public Object call(final GetResponse getResponse) throws Exception {
+        System.out.println(getResponse);
+        return null;
+      }
+    }).addErrback(new Callback<Object, Object>() {
+      public Object call(final Object o) throws Exception {
+        System.err.println("ERROR: " + o);
+        return null;
+      }
+    });
   }
 }
